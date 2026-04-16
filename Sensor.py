@@ -6,27 +6,30 @@ class Sensor:
     id: int
     coordinates: list[float]
 
-    next_event: int = -1
-    generator: GaussianNoiseGenerator
+    next_event: int  # Время прихода следующего события
+    generator: GaussianNoiseGenerator  # Генератор шума
 
-    impulse: BerlageImpulse
-    impulse_n: int = 0
+    impulse: BerlageImpulse  # Импульс для записи
+    impulse_n: int  # Счётчик отсчётов импульса
 
-    detector: Detector
+    detector: Detector  # Детектор STA/LTA
 
-    t: int = -1
+    t: int  # Внутреннее время (мс)
 
     def __init__(self, coordinates: list[float], id: int):
         self.id = id
         self.coordinates = coordinates
+        self.next_event = -1
         self.generator = GaussianNoiseGenerator(0, 0.0005)
+        self.impulse_n = 0
         self.detector = Detector(30, 300, 2)
-        self.n = 0
+        self.t = 0
 
     def generate_once(self):
         it = {}
-
+        
         self.t += 10
+
         if self.next_event != -1 and self.t >= self.next_event:
             it["response"] = self.impulse.w[self.impulse_n] + self.generator.generate_once()
             self.impulse_n += 1
@@ -37,7 +40,5 @@ class Sensor:
             it["response"] = self.generator.generate_once()
 
         it["event"] = self.detector.detect(it["response"])
-
-        self.n += 10
 
         return it

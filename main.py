@@ -3,10 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 
-import random
 import asyncio
-import json
-import time
 
 from GaussianNoiseGenerator import *
 from BerlageImpulse import *
@@ -17,11 +14,6 @@ app = FastAPI()
 templates = Jinja2Templates(directory='templates')
 
 app.mount('/static', StaticFiles(directory='static'), name='static')
-
-# === НАСТРОЙКИ ===
-SAMPLE_RATE = 5000
-CHUNK_SIZE = 500
-CHUNK_DURATION = CHUNK_SIZE / SAMPLE_RATE
 
 cluster = SensorCluster([
     Sensor([0, 0],  0),
@@ -52,57 +44,6 @@ def index(request: Request):
         }
     )
 
-"""
-@app.websocket("/noise")
-async def noise(*, ws: WebSocket):
-    recorded = 0
-
-    result = {
-        "event_marks": {},
-        "sensor_responses": {}
-    }
-
-    for sensor in cluster.sensors:
-        result["event_marks"][sensor.id] = []
-
-        result["sensor_responses"][sensor.id] = {
-            "t": [],
-            "v": []
-        }
-
-    cluster.record(source)
-
-    await ws.accept()
-    timestamp = time.time()
-    try:
-        while True:
-            data = cluster.generate_once()
-            
-            for sensor_id, response in data["sensor_responses"].items():
-                result["sensor_responses"][sensor_id]["t"].append(timestamp)
-                result["sensor_responses"][sensor_id]["v"].append(response)
-            for sensor_id in data["event_marks"]:
-                result["event_marks"][sensor_id].append(timestamp)
-            recorded += 1
-
-            if recorded >= CHUNK_SIZE:
-                await ws.send_json(result)
-                for sensor in cluster.sensors:
-                    result["event_marks"][sensor.id] = []
-
-                    result["sensor_responses"][sensor.id] = {
-                        "t": [],
-                        "v": []
-                    }
-                recorded = 0
-                await asyncio.sleep(0.1)
-            else:
-                timestamp += 0.0002
-                #time.sleep(0.0002)
-    except WebSocketDisconnect:
-        pass
-"""
-
 @app.websocket("/noise")
 async def noise(*, ws: WebSocket):
     cluster = SensorCluster([
@@ -126,7 +67,7 @@ async def noise(*, ws: WebSocket):
     await ws.accept()
     try:
         while True:
-            if cluster.get(10).next_event == -1 and cluster.get(10).next_event == -1:
+            if cluster.get(10).next_event == -1 and cluster.get(11).next_event == -1:
                 cluster.record(source)
             data = cluster.generate_once()
             

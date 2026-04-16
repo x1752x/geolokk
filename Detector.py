@@ -1,12 +1,14 @@
-import numpy as np
-
 class Detector:
-    n_sta: int
-    n_lta: int
-    treshold: float
-    sta: float | None = None
-    lta: float | None = None
-    is_active: bool = False  # <-- Добавляем атрибут для хранения состояния
+    """
+    Реализация алгоритма STA/LTA
+    """
+
+    n_sta: int  # Длина короткого окна
+    n_lta: int  # Длина длинного окна
+    treshold: float  # Пороговое значение STA/LTA (ratio)
+    sta: float | None = None  # Скользящее среднее для STA
+    lta: float | None = None  # Скользящее среднее для LTA
+    is_active: bool = False  # Атрибут для хранения состояния
 
     def __init__(self, n_sta: int, n_lta: int, treshold: float):
         self.n_sta = n_sta
