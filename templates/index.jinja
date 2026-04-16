@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Геолокация</title>
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="{{ url_for('static', path = 'lib/bootstrap.min.css') }}" rel="stylesheet">
     
     <!-- uPlot CSS + JS -->
-    <link rel="stylesheet" href="{{ url_for('static', path = 'uPlot.min.css') }}">
-    <script src="{{ url_for('static', path = 'uPlot.iife.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path = 'lib/uPlot.min.css') }}">
+    <script src="{{ url_for('static', path = 'lib/uPlot.iife.min.js') }}"></script>
     
-    <!-- Chart.js только для кластера -->
-    <script src="{{ url_for('static', path = '/chart.umd.min.js') }}"></script>
-    <script src="{{ url_for('static', path = '/chartjs-plugin-annotation.min.js') }}"></script>
+    <!-- Chart.js -->
+    <script src="{{ url_for('static', path = 'lib/chart.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', path = 'lib/chartjs-plugin-annotation.min.js') }}"></script>
     
     <style>
         body {
@@ -126,7 +126,7 @@
         });
     </script>
 
-    <!-- === Передаём список ID сенсоров в чистый JS === -->
+    <!-- === Передаём список ID сенсоров === -->
     <script>
         window.SENSOR_IDS = [
             {% for sensor in cluster.sensors %}
@@ -135,10 +135,9 @@
         ];
     </script>
 
-    <!-- Подключаем чистый JS-файл -->
     <script src="{{ url_for('static', path = '/index.js') }}"></script>
     
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', path = 'lib/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>
