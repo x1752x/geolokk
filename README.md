@@ -11,7 +11,7 @@
 2. Detects occurence of some event and records time of its arrival for every sensor using STA/LTA method.
 3. Calculates coordinates of the noise source that caused the event using Time Differences of Arrival (TDoA):
 
-| ![](./assets/functional.jpg) |
+| $\Phi_2 = \sum_{i=1}^{m-1} \sum_{j=i+1}^{m} \left( \sqrt{(x_i - x)^2 + (y_i - y)^2 + (z_i - z)^2} - \sqrt{(x_j - x)^2 + (y_j - y)^2 + (z_j - z)^2} - с \, t_{ij} \right)^2$ |
 |:--:|
 | *The calculation comes down to minimization of this functional. Here (x, y, z) are coordinates of the noise source.* |
 
