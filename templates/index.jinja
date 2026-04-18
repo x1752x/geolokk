@@ -103,21 +103,27 @@
                     backgroundColor: 'rgba(54, 162, 235, 0.7)'
                 },
                 {
-                    label: 'ИЗ',
+                    label: 'Локализованный ИЗ',
+                    data: [
+                    ],
+                    backgroundColor: 'rgba(164, 214, 56, 0.7)'
+                },
+                {
+                    label: 'Реальный ИЗ',
                     data: [
                         {x: {{source.coordinates[0]}}, y: {{source.coordinates[1]}}},
-                        {x: 0, y: 0}
                     ],
                     backgroundColor: 'rgba(255, 99, 132, 0.7)'
-                }]
+                },
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true, 
                 aspectRatio: 1, // <--- ДЕЛАЕТ ГРАФИК КВАДРАТНЫМ
                 scales: {
-                    x: { min: -5000, max: 5000, title: { display: true, text: 'X' } },
-                    y: { min: -5000, max: 5000, title: { display: true, text: 'Y' } }
+                    x: { min: -2000, max: 2000, title: { display: true, text: 'X' } },
+                    y: { min: -2000, max: 2000, title: { display: true, text: 'Y' } }
                 },
                 plugins: {
                     legend: { position: 'bottom' }

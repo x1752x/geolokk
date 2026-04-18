@@ -124,7 +124,11 @@ function handleWebSocketMessage(data) {
     });
 
     if (data.location.length != 0) {
-        window.clusterChart.data.datasets[1].data[1] = {x: data.location[0], y: data.location[1]};
+        if (window.clusterChart.data.datasets[1].length < 1) {
+            window.clusterChart.data.datasets[1].data.push({x: data.location[0], y: data.location[1]})
+        } else {
+            window.clusterChart.data.datasets[1].data[0] = {x: data.location[0], y: data.location[1]};
+        }
         window.clusterChart.update();
     }
 
