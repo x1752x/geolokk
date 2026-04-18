@@ -29,6 +29,15 @@ class SensorCluster:
 
         return next(filter(lambda sensor: sensor.id == id, self.sensors))
     
+    def fix_ids(self) -> None:
+        """
+        Иногда порядок id в кластере сбивается, что вызывает проблемы. 
+        Этот метод восстанавливает их.
+        """
+
+        for i in range(0, len(self.sensors)):
+            self.sensors[i].id = i
+    
     def delay(self, id1: int, id2: int) -> float:
         """
         Задержка прихода между двумя датчиками.

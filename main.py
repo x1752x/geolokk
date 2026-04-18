@@ -34,6 +34,7 @@ with connection.cursor() as cursor:
     structure = cursor.fetchall()
 
     cluster = SensorCluster([Sensor([sensor[1], sensor[2]], sensor[0]) for sensor in structure])
+    cluster.fix_ids()
 
     cursor.execute("SELECT * FROM noise_source")
     source_layout = cursor.fetchall()[0]
@@ -51,9 +52,8 @@ def worker(stop_event: threading.Event):
     cursor = connection.cursor()
 
     while not stop_event.is_set():
-        if cluster.get(10).next_event == -1 and cluster.get(11).next_event == -1:
+        if False not in [sensor.next_event == -1 for sensor in cluster.sensors]:
             cluster.record(source)
-            #print(f"RECORD CALLED at t={cluster.get(10).t}")
         data = cluster.generate_once()
         json_data = json.dumps(data)
         cursor.execute("INSERT INTO cluster_responses (response) VALUES (%s);", (json_data,))
