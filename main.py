@@ -13,6 +13,7 @@ import threading
 import json
 import time
 import asyncpg
+import webbrowser
 
 from GaussianNoiseGenerator import *
 from BerlageImpulse import *
@@ -72,6 +73,7 @@ def worker(stop_event: threading.Event):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    webbrowser.open_new_tab("http://127.0.0.1:8000/")
     stop = threading.Event()
     thread = threading.Thread(target = worker, args=(stop,), daemon=True)
     print("WORKER THREAD STARTING...")
