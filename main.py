@@ -66,7 +66,7 @@ def worker(stop_event: threading.Event):
             )
         """)
         connection.commit()
-        time.sleep(0.01)
+        time.sleep(0.007)
 
     cursor.close()
     connection.close()
