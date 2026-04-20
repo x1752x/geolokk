@@ -1,8 +1,14 @@
 from Sensor import *
 from NoiseSource import *
+from Trace import *
+
 from random import uniform as randfloat
 from scipy.optimize import minimize
+
 import numpy as np
+
+import yaml
+import lttbc
 
 SOUND_SPEED = 340
 
@@ -17,11 +23,20 @@ class SensorCluster:
     randomization: bool  # При True применяется случайное число, при False максимально возможное
     events: dict  # Сработавшие датчики и время
 
+    impulse: np.ndarray
+
     def __init__(self, sensors: list[Sensor] = []):
         self.sensors = sensors
         self.inaccuracy = 0.002
         self.randomization = True
         self.events = {}
+
+        with open("config.yaml", 'r') as config_file:
+            config = yaml.safe_load(config_file)
+
+        trace = Trace(config['impulse'])
+        _, self.impulse = lttbc.downsample(trace.timeline, trace.values, 2000)
+        self.impulse = self.impulse[500:]
 
     def get(self, id: int) -> Sensor:
         """
@@ -126,12 +141,8 @@ class SensorCluster:
             # Время прихода с учётом погрешности
             arrival = ideal_arrival + arrival_inaccuracy
 
-            # Генерация импульса Берлаге
-            berlage = BerlageImpulse()
-            berlage.build(0, 7, 350)
-
             # Передать импульс на сенсор и задать время прихода
-            sensor.impulse = berlage
+            sensor.impulse = self.impulse.copy()
             sensor.next_event = sensor.t + arrival*1000
 
     def generate_once(self):
@@ -158,9 +169,10 @@ class SensorCluster:
 
             gdop = self.gdop(list(self.events.keys()), coords)
 
-            if gdop <= 10:
+            if gdop <= 3:
                 it["location"].append(coords[0])
                 it["location"].append(coords[1])
+                print(gdop)
                 print(self.events.keys())
                 print(coords)
 

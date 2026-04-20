@@ -1,5 +1,5 @@
-const MAX_POINTS = 2000;
-const WINDOW_SIZE = 10;
+const MAX_POINTS = 4000;
+const WINDOW_SIZE = 25;
 let counter = 0;
 
 const sensorPlots = {};
@@ -14,7 +14,7 @@ function initSensorPlot(sensorId, container) {
         pxAlign: false,
         scales: {
             x: { time: false },
-            y: { range: [-0.008, 0.008] }
+            y: { range: [-800, 800] }
         },
         series: [
             {},
