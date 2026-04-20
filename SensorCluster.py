@@ -2,6 +2,7 @@ from Sensor import *
 from NoiseSource import *
 from random import uniform as randfloat
 from scipy.optimize import minimize
+import numpy as np
 
 SOUND_SPEED = 340
 
@@ -37,6 +38,32 @@ class SensorCluster:
 
         for i in range(0, len(self.sensors)):
             self.sensors[i].id = i
+
+    def gdop(self, a, res):
+        H = []
+
+        for i in a:
+            dx = res[0] - self.get(i).coordinates[0]
+            dy = res[1] - self.get(i).coordinates[1]
+            dist = np.sqrt(dx**2 + dy**2)
+
+            if dist < 1e-6:
+                return float('inf')
+            
+            H.append([dx/dist, dy/dist])
+
+        H = np.array(H)
+
+        try:
+            # H^T * H
+            Q = H.T @ H
+            # Обратная матрица
+            Q_inv = np.linalg.inv(Q)
+            # След матрицы (сумма диагонали)
+            gdop = np.sqrt(np.trace(Q_inv))
+            return gdop
+        except np.linalg.LinAlgError:
+            return float('inf')
     
     def delay(self, id1: int, id2: int) -> float:
         """
@@ -51,16 +78,17 @@ class SensorCluster:
         """
 
         it = 0
-        n = len(self.sensors)
+        n = 3
+        a = [key for key in self.events.keys()]
         for i in range(n-1):
             for j in range(i+1, n):
-                distance_i = np.sqrt((self.get(i).coordinates[0] - noise_coordinates[0])**2 + 
-                               (self.get(i).coordinates[1] - noise_coordinates[1])**2)
+                distance_i = np.sqrt((self.get(a[i]).coordinates[0] - noise_coordinates[0])**2 + 
+                               (self.get(a[i]).coordinates[1] - noise_coordinates[1])**2)
                 
-                distance_j = np.sqrt((self.get(j).coordinates[0] - noise_coordinates[0])**2 + 
-                               (self.get(j).coordinates[1] - noise_coordinates[1])**2)
+                distance_j = np.sqrt((self.get(a[j]).coordinates[0] - noise_coordinates[0])**2 + 
+                               (self.get(a[j]).coordinates[1] - noise_coordinates[1])**2)
                 
-                diff = distance_i - distance_j - SOUND_SPEED * (self.delay(i, j) / 1000)
+                diff = distance_i - distance_j - SOUND_SPEED * (self.delay(a[i], a[j]) / 1000)
                 it += diff**2
         return it
     
@@ -72,7 +100,7 @@ class SensorCluster:
         result = minimize(
             fun = self.phi,
             x0 = [0, 0],
-            method='Nelder-Mead',
+            method='L-BFGS-B',
             tol=1e-10
         )
 
@@ -124,12 +152,19 @@ class SensorCluster:
                     self.events[sensor.id] = sensor.t
 
 
-        # Если все датчики сработали, рассчитать и отправить координаты ИЗ
-        if len(self.events) == len(self.sensors):
+        # Если три датчика сработало, рассчитать и отправить координаты ИЗ
+        if len(self.events) >= 3:
             coords = self.localize_source()
-            it["location"].append(coords[0])
-            it["location"].append(coords[1])
+
+            gdop = self.gdop(list(self.events.keys()), coords)
+
+            if gdop <= 10:
+                it["location"].append(coords[0])
+                it["location"].append(coords[1])
+                print(self.events.keys())
+                print(coords)
+
+            
             self.events = {}
-            print(coords)
         
         return it
