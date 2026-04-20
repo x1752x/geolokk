@@ -22,7 +22,7 @@ from SensorCluster import *
 
 with open("config.yaml", 'r') as config_file:
     config = yaml.safe_load(config_file)
-
+"""
 connection = psycopg2.connect(dbname=config["database"], 
                     user=config["user"], 
                     password=config["password"], 
@@ -42,6 +42,11 @@ with connection.cursor() as cursor:
     source = NoiseSource([source_layout[1], source_layout[2]], source_layout[0])
 
 connection.close()
+"""
+
+cluster = SensorCluster([Sensor(coords, id) for id, coords in config['cluster'].items()])
+for id, coords in config['noise'].items():
+    source = NoiseSource(coords, id)
 
 def worker(stop_event: threading.Event):
     connection = psycopg2.connect(dbname=config["database"], 

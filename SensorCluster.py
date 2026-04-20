@@ -10,8 +10,6 @@ import numpy as np
 import yaml
 import lttbc
 
-SOUND_SPEED = 340
-
 class SensorCluster:
     """
     Кластер датчиков. 
@@ -26,14 +24,20 @@ class SensorCluster:
     impulse: np.ndarray
 
     def __init__(self, sensors: list[Sensor] = []):
-        self.sensors = sensors
-        self.inaccuracy = 0.002
-        self.randomization = True
-        self.events = {}
-
         with open("config.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
+        self.SOUND_SPEED = config['sound_speed']
+        self.method = config['minimization_method']
+        self.impulse_multiplier = config['impulse_multiplier']
+        self.sensors_treshold = config['sensors_treshold']
+        self.gdop_treshold = config['gdop_treshold']
+
+        self.sensors = sensors
+        self.inaccuracy = config['cluster_inaccuracy']
+        self.randomization = config['cluster_randomization']
+        self.events = {}
+        
         trace = Trace(config['impulse'])
         _, self.impulse = lttbc.downsample(trace.timeline, trace.values, 2000)
         self.impulse = self.impulse[500:]
@@ -103,7 +107,7 @@ class SensorCluster:
                 distance_j = np.sqrt((self.get(a[j]).coordinates[0] - noise_coordinates[0])**2 + 
                                (self.get(a[j]).coordinates[1] - noise_coordinates[1])**2)
                 
-                diff = distance_i - distance_j - SOUND_SPEED * (self.delay(a[i], a[j]) / 1000)
+                diff = distance_i - distance_j - self.SOUND_SPEED * (self.delay(a[i], a[j]) / 1000)
                 it += diff**2
         return it
     
@@ -115,7 +119,7 @@ class SensorCluster:
         result = minimize(
             fun = self.phi,
             x0 = [0, 0],
-            method='L-BFGS-B',
+            method=self.method,
             tol=1e-10
         )
 
@@ -130,7 +134,7 @@ class SensorCluster:
             # Дистанция от датчика до ИЗ
             distance = np.sqrt((sensor.coordinates[0] - source.coordinates[0])**2 + (sensor.coordinates[1] - source.coordinates[1])**2)
             # Расчётное время прихода
-            ideal_arrival = distance / SOUND_SPEED
+            ideal_arrival = distance / self.SOUND_SPEED
 
             # Погрешность прихода
             if self.randomization:
@@ -142,7 +146,7 @@ class SensorCluster:
             arrival = ideal_arrival + arrival_inaccuracy
 
             # Передать импульс на сенсор и задать время прихода
-            sensor.impulse = self.impulse.copy() * 600/distance
+            sensor.impulse = self.impulse.copy() * 1/distance * self.impulse_multiplier
             sensor.next_event = sensor.t + arrival*1000
 
     def generate_once(self):
@@ -164,17 +168,18 @@ class SensorCluster:
 
 
         # Если три датчика сработало, рассчитать и отправить координаты ИЗ
-        if len(self.events) >= 3:
+        if len(self.events) >= self.sensors_treshold:
             coords = self.localize_source()
 
             gdop = self.gdop(list(self.events.keys()), coords)
 
-            if gdop <= 3:
+            if gdop <= self.gdop_treshold:
                 it["location"].append(coords[0])
                 it["location"].append(coords[1])
                 print(gdop)
                 print(self.events.keys())
                 print(coords)
+                print('\n')
 
             
             self.events = {}

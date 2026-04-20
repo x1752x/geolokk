@@ -2,6 +2,8 @@ from GaussianNoiseGenerator import *
 from BerlageImpulse import *
 from Detector import *
 
+import yaml
+
 class Sensor:
     id: int
     coordinates: list[float]
@@ -17,12 +19,15 @@ class Sensor:
     t: int  # Внутреннее время (мс)
 
     def __init__(self, coordinates: list[float], id: int):
+        with open("config.yaml", 'r') as config_file:
+            config = yaml.safe_load(config_file)
+
         self.id = id
         self.coordinates = coordinates
         self.next_event = -1
-        self.generator = GaussianNoiseGenerator(0, 10)
+        self.generator = GaussianNoiseGenerator(0, config['noise_std'])
         self.impulse_n = 0
-        self.detector = Detector(100, 2000, 2)
+        self.detector = Detector(config['sta'], config['lta'], config['ratio'])
         self.t = 0
 
     def generate_once(self):
