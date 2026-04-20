@@ -142,7 +142,7 @@ class SensorCluster:
             arrival = ideal_arrival + arrival_inaccuracy
 
             # Передать импульс на сенсор и задать время прихода
-            sensor.impulse = self.impulse.copy()
+            sensor.impulse = self.impulse.copy() * 600/distance
             sensor.next_event = sensor.t + arrival*1000
 
     def generate_once(self):

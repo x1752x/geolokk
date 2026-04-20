@@ -22,7 +22,7 @@ class Sensor:
         self.next_event = -1
         self.generator = GaussianNoiseGenerator(0, 10)
         self.impulse_n = 0
-        self.detector = Detector(100, 1000, 2.5)
+        self.detector = Detector(100, 2000, 2)
         self.t = 0
 
     def generate_once(self):
