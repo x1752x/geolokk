@@ -22,27 +22,6 @@ from SensorCluster import *
 
 with open("config.yaml", 'r') as config_file:
     config = yaml.safe_load(config_file)
-"""
-connection = psycopg2.connect(dbname=config["database"], 
-                    user=config["user"], 
-                    password=config["password"], 
-                    host=config["host"],
-                    port=config["port"])
-
-with connection.cursor() as cursor:
-    cursor.execute("SELECT * FROM cluster_structure")
-    structure = cursor.fetchall()
-
-    cluster = SensorCluster([Sensor([sensor[1], sensor[2]], sensor[0]) for sensor in structure])
-    cluster.fix_ids()
-
-    cursor.execute("SELECT * FROM noise_source")
-    source_layout = cursor.fetchall()[0]
-
-    source = NoiseSource([source_layout[1], source_layout[2]], source_layout[0])
-
-connection.close()
-"""
 
 cluster = SensorCluster([Sensor(coords, id) for id, coords in config['cluster'].items()])
 for id, coords in config['noise'].items():
