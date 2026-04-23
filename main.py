@@ -70,7 +70,7 @@ templates = Jinja2Templates(directory='templates')
 
 app.mount('/static', StaticFiles(directory='static'), name='static')
 
-@app.get('/', response_class = HTMLResponse)
+@app.get('/impulse', response_class = HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
         request = request,
@@ -81,7 +81,7 @@ def index(request: Request):
         }
     )
 
-@app.websocket("/impulse")
+@app.websocket("/stream/impulse")
 async def impulse(*, ws: WebSocket):
     await ws.accept()
     
