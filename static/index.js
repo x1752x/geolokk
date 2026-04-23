@@ -161,7 +161,7 @@ document.addEventListener('visibilitychange', () => {
 document.addEventListener('DOMContentLoaded', () => {
     initAllSensors();
     
-    const ws = new WebSocket("ws://localhost:8000/noise");
+    const ws = new WebSocket("ws://localhost:8000/impulse");
     
     ws.onmessage = function(event) {
         try {

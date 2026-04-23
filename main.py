@@ -83,8 +83,8 @@ def index(request: Request):
         }
     )
 
-@app.websocket("/noise")
-async def noise(*, ws: WebSocket):
+@app.websocket("/impulse")
+async def impulse(*, ws: WebSocket):
     await ws.accept()
     
     conn = await asyncpg.connect(
