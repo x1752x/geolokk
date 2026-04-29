@@ -29,6 +29,7 @@ class SensorCluster:
 
         self.SOUND_SPEED = config['sound_speed']
         self.method = config['minimization_method']
+        self.x0 = config['minimization_x0']
         self.impulse_multiplier = config['impulse_multiplier']
         self.sensors_treshold = config['sensors_treshold']
         self.gdop_treshold = config['gdop_treshold']
@@ -118,7 +119,7 @@ class SensorCluster:
 
         result = minimize(
             fun = self.phi,
-            x0 = [6067725, 9190980],
+            x0 = self.x0,
             method=self.method,
             tol=1e-32,
         )
