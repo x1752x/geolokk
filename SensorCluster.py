@@ -97,8 +97,8 @@ class SensorCluster:
         """
 
         it = 0
-        n = 3
         a = [key for key in self.events.keys()]
+        n = len(a)
         for i in range(n-1):
             for j in range(i+1, n):
                 distance_i = np.sqrt((self.get(a[i]).coordinates[0] - noise_coordinates[0])**2 + 
@@ -118,9 +118,9 @@ class SensorCluster:
 
         result = minimize(
             fun = self.phi,
-            x0 = [0, 0],
+            x0 = [6067725, 9190980],
             method=self.method,
-            tol=1e-10
+            tol=1e-32,
         )
 
         return result.x
@@ -148,6 +148,26 @@ class SensorCluster:
             # Передать импульс на сенсор и задать время прихода
             sensor.impulse = self.impulse.copy() * 1/distance * self.impulse_multiplier
             sensor.next_event = sensor.t + arrival*1000
+
+    @staticmethod
+    def from_traces(traces: dict[int, str]):
+        """
+        Пустить на регистраторы готовые трассы из словаря.
+        """
+        sensors = []
+
+        for id, trace in traces.items():
+            trace = Trace(trace)
+            _, values = lttbc.downsample(trace.timeline, trace.values, 3660) # 219600
+            dx = trace.header['Lat'] * np.pi / 180 * 6371000
+            dy = trace.header['Lon'] * np.pi / 180 * 6371000
+            sensor = Sensor([dx, dy], id)
+            print([dx, dy])
+            sensor.impulse = values
+            sensor.next_event = 0
+            sensors.append(sensor)
+    
+        return SensorCluster(sensors)
 
     def generate_once(self):
         it = {

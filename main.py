@@ -22,11 +22,11 @@ from SensorCluster import *
 with open("config.yaml", 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-cluster = SensorCluster([Sensor(coords, id) for id, coords in config['cluster'].items()])
-for id, coords in config['noise'].items():
-    source = NoiseSource(coords, id)
+impulse_cluster = SensorCluster([Sensor(coords, id) for id, coords in config['impulse_cluster'].items()])
+for id, coords in config['impulse_source'].items():
+    impulse_source = NoiseSource(coords, id)
 
-def worker(stop_event: threading.Event):
+def impulse_generator(stop_event: threading.Event):
     connection = psycopg2.connect(dbname=config["database"], 
                     user=config["user"], 
                     password=config["password"], 
@@ -35,9 +35,9 @@ def worker(stop_event: threading.Event):
     cursor = connection.cursor()
 
     while not stop_event.is_set():
-        if False not in [sensor.next_event == -1 for sensor in cluster.sensors]:
-            cluster.record(source)
-        data = cluster.generate_once()
+        if False not in [sensor.next_event == -1 for sensor in impulse_cluster.sensors]:
+            impulse_cluster.record(impulse_source)
+        data = impulse_cluster.generate_once()
         json_data = json.dumps(data)
         cursor.execute("INSERT INTO cluster_responses (response) VALUES (%s);", (json_data,))
         cursor.execute("""
@@ -54,16 +54,53 @@ def worker(stop_event: threading.Event):
     cursor.close()
     connection.close()
 
+vehicle_cluster = SensorCluster.from_traces(config['vehicle_cluster'])
+
+def vehicle_generator(stop_event: threading.Event):
+    connection = psycopg2.connect(dbname=config["database"], 
+                    user=config["user"], 
+                    password=config["password"], 
+                    host=config["host"],
+                    port=config["port"])
+    cursor = connection.cursor()
+
+    while not stop_event.is_set():
+        data = vehicle_cluster.generate_once()
+        json_data = json.dumps(data)
+        cursor.execute("INSERT INTO vehicle_responses (response) VALUES (%s);", (json_data,))
+        cursor.execute("""
+            DELETE FROM vehicle_responses
+            WHERE id IN (
+                SELECT id FROM vehicle_responses
+                ORDER BY id ASC
+                LIMIT (SELECT GREATEST(0, count(*) - 2000) FROM vehicle_responses)
+            )
+        """)
+        connection.commit()
+        time.sleep(0.007)
+
+    cursor.close()
+    connection.close()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    stop = threading.Event()
-    thread = threading.Thread(target = worker, args=(stop,), daemon=True)
-    print("WORKER THREAD STARTING...")
-    thread.start();
+    impulse_generator_stop = threading.Event()
+    impulse_generator_thread = threading.Thread(target = impulse_generator, args=(impulse_generator_stop,), daemon=True)
+    
+    vehicle_generator_stop = threading.Event()
+    vehicle_generator_thread = threading.Thread(target = vehicle_generator, args=(vehicle_generator_stop,), daemon = True)
+
+    #print("IMPULSE GENERATOR THREAD STARTING...")
+    #impulse_generator_thread.start()
+
+    print("VEHICLE GENERATOR THREAD STARTING...")
+    vehicle_generator_thread.start()
 
     yield
 
-    stop.set()
+    impulse_generator_stop.set()
+    vehicle_generator_stop.set()
+
 
 app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory='templates')
@@ -76,8 +113,8 @@ def impulse(request: Request):
         request = request,
         name = 'impulse.jinja',
         context = {
-            "cluster": cluster,
-            "source": source
+            "cluster": impulse_cluster,
+            "source": impulse_source
         }
     )
 
@@ -108,4 +145,43 @@ async def stream_impulse(*, ws: WebSocket):
         pass
     finally:
         await conn.remove_listener('new_response_channel', callback)
+        await conn.close()
+
+@app.get('/vehicle', response_class = HTMLResponse)
+def vehicle(request: Request):
+    return templates.TemplateResponse(
+        request = request,
+        name = 'vehicle.jinja',
+        context = {
+            "cluster": vehicle_cluster
+        }
+    )
+
+@app.websocket("/stream/vehicle")
+async def stream_vehicle(*, ws: WebSocket):
+    await ws.accept()
+    
+    conn = await asyncpg.connect(
+        user=config['user'],
+        password=config['password'],
+        host=config['host'],
+        database=config['database'],
+        port=config['port']
+    )
+    
+    queue = asyncio.Queue()
+
+    async def callback(conn, pid, channel, payload):
+        await queue.put(payload)
+
+    await conn.add_listener('new_vehicle_response_channel', callback)
+
+    try:
+        while True:
+            payload = await queue.get()
+            await ws.send_text(payload)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await conn.remove_listener('new_vehicle_response_channel', callback)
         await conn.close()
