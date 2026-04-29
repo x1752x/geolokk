@@ -90,11 +90,13 @@ async def lifespan(app: FastAPI):
     vehicle_generator_stop = threading.Event()
     vehicle_generator_thread = threading.Thread(target = vehicle_generator, args=(vehicle_generator_stop,), daemon = True)
 
-    #print("IMPULSE GENERATOR THREAD STARTING...")
-    #impulse_generator_thread.start()
+    if config['impulse_active']:
+        print("IMPULSE GENERATOR THREAD STARTING...")
+        impulse_generator_thread.start()
 
-    print("VEHICLE GENERATOR THREAD STARTING...")
-    vehicle_generator_thread.start()
+    if config['vehicle_active']:
+        print("VEHICLE GENERATOR THREAD STARTING...")
+        vehicle_generator_thread.start()
 
     yield
 
